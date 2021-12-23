@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+		    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="topmenu">
+	<select id="get_topmenu_list" resultType="kr.co.softsoldesk.beans.BoardInfoBean">
+		
+		<![CDATA[ 
+		select board_info_idx, board_info_name from board_info_table ORDER BY board_info_idx
+		]]>
+	</select>
+</mapper>

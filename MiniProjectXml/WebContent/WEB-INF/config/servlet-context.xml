@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans:beans xmlns="http://www.springframework.org/schema/mvc"
+			 xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+			 xmlns:beans="http://www.springframework.org/schema/beans"
+			 xmlns:context="http://www.springframework.org/schema/context"
+			 xsi:schemaLocation="http://www.springframework.org/schema/mvc
+			 					 http://www.springframework.org/schema/mvc/spring-mvc.xsd
+			 					 http://www.springframework.org/schema/beans
+			 					 http://www.springframework.org/schema/beans/spring-beans.xsd
+			 					 http://www.springframework.org/schema/context
+			 					 http://www.springframework.org/schema/context/spring-context.xsd">
+			 					 
+	<!-- 스캔한 패지키 내부의 클래스 중 Controller 어노테이션을 가지고 있는 클래스들을 Controller로 로딩하도록 한다 -->
+	<annotation-driven/>
+	
+	<!-- 스캔할 bean들이 모여있는 패키지를 지정한다. -->
+	<context:component-scan base-package="kr.co.softsoldesk.controller"/>
+	<context:component-scan base-package="kr.co.softsoldesk.dao"/>
+	<context:component-scan base-package="kr.co.softsoldesk.service"/>
+    
+    <!-- Controller의 메서드에서 반환하는 문자열 앞 뒤에 붙힐 경로 정보를 셋팅한다. -->
+	<beans:bean class="org.springframework.web.servlet.view.InternalResourceViewResolver">
+		<beans:property name="prefix" value="/WEB-INF/views/"/>
+		<beans:property name="suffix" value=".jsp"/>
+	</beans:bean>
+	
+	<!-- 정적파일(이미지, 사운드, 동영상, JS, CSS 등등) 경로 셋팅 -->
+	<resources mapping="/**" location="/resources/"/>
+	
+	
+	<!-- properties 파일의 내용을 사용할수 있도록 Bean을 정의한다. -->
+	<!-- 프로퍼티 소스로 대체하는 부분 @Value(어쩌구) 한 부분.(자바 서블릿에서)  -->
+	<beans:bean class='org.springframework.beans.factory.config.PropertyPlaceholderConfigurer'>
+		<beans:property name="location">
+			<beans:value>/WEB-INF/properties/db.properties</beans:value>
+		</beans:property>
+	</beans:bean>
+	
+	<!-- 드라이버 설정 -->
+	<!-- 오라클에 접속 정보로 접속  -->
+	<beans:bean class='org.apache.commons.dbcp2.BasicDataSource' id='basic_data_source'>
+		<beans:property name="driverClassName" value="${db.classname}"/>
+		<beans:property name="url" value="${db.url}"/>
+		<beans:property name='username' value="${db.username}"/>
+		<beans:property name="password" value="${db.password}"/>
+	</beans:bean>
+	
+	<!-- 쿼리문 관리 -->	
+	<!-- preparedStatement와 동일한 부분  -->
+	<beans:bean class='org.mybatis.spring.SqlSessionFactoryBean' id='sqlSession'>
+		<beans:property name="dataSource" ref='basic_data_source'/>
+		<beans:property name="mapperLocations" value='/WEB-INF/mapper/*.xml'/>
+	</beans:bean>
+	
+	<!-- 쿼리문 동작 -->
+	<beans:bean class='org.mybatis.spring.SqlSessionTemplate' id='sqlSessionTemplate'>
+		<beans:constructor-arg index='0' ref='sqlSession'/>
+	</beans:bean>
+	
+	<!-- 인터셉터 등록 -->
+	<interceptors>
+		<interceptor>
+			<mapping path="/**"/>
+			<beans:bean class='kr.co.softsoldesk.interceptor.TopMenuInterceptor'/>
+		</interceptor>
+		
+		<interceptor>
+			<mapping path="/user/modify"/>
+			<mapping path="/user/logout"/>
+			<mapping path="/board/*"/>
+			<exclude-mapping path="/board/main"/>
+			<beans:bean class='kr.co.softsoldesk.interceptor.CheckLoginInterceptor'/>
+		</interceptor>
+	</interceptors>
+
+	
+	<!-- MessageSource를 등록한다 (프로퍼티 이용)  -->
+	<!-- 선언과 동시에 객체 생성. 서버랑 직결 연결되어있어서 기본선언 정리 따로 안해줘도 됨. 대신 아래 메세지 접근 설정해줌  -->
+	<beans:bean class='org.springframework.context.support.ReloadableResourceBundleMessageSource' id='messageSource'>
+		<beans:property name="basenames">
+			<beans:list>
+				<beans:value>/WEB-INF/properties/error_message</beans:value>
+			</beans:list>
+		</beans:property>
+	</beans:bean>
+	
+	<!-- Message 접근을 위한 접근자 등록 -->
+	<beans:bean class='org.springframework.context.support.MessageSourceAccessor'>
+		<beans:constructor-arg ref='messageSource'/>
+	</beans:bean>
+	
+	<!-- multiPart -->
+	<beans:bean class='org.springframework.web.multipart.support.StandardServletMultipartResolver' id='multipartResolver'/>
+	
+	
+</beans:beans>
